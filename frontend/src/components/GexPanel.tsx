@@ -43,7 +43,7 @@ function IconHorizontal({ color }: { color: string }) {
 }
 
 export function GexPanel({ symbol, data, isDark }: Props) {
-  const [horizontal, setHorizontal] = useState(false);
+  const [horizontal, setHorizontal] = useState(true);
 
   const panelBg = isDark ? "bg-[#111318]" : "bg-white";
   const border = isDark ? "border-[#2a2d3a]" : "border-[#e2e8f0]";
