@@ -14,7 +14,11 @@ from .scheduler import poll_and_broadcast, latest_gex_cache
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await poll_and_broadcast()
+    # Initial poll — don't crash the server if it fails (e.g. missing env vars)
+    try:
+        await poll_and_broadcast()
+    except Exception as e:
+        print(f"[startup] Initial poll failed: {e}")
 
     scheduler = AsyncIOScheduler()
     scheduler.add_job(poll_and_broadcast, "interval", seconds=45, id="gex_poll")
