@@ -3,7 +3,7 @@ set -e
 
 # Write Schwab tokens from environment variable to file
 if [ -n "$SCHWAB_TOKENS" ]; then
-  echo "$SCHWAB_TOKENS" > backend/tokens.json
+  printf '%s' "$SCHWAB_TOKENS" > backend/tokens.json
   echo "Tokens written from env var."
 fi
 
