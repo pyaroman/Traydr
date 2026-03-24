@@ -7,6 +7,29 @@ SYMBOLS = ["SPY", "$SPX", "QQQ", "$NDX"]
 DISPLAY_NAMES = {"$SPX": "SPX", "$NDX": "NDX"}
 
 
+def _find_gamma_flip(bars: list[dict], spot: float) -> float | None:
+    """Find the strike nearest to spot where net GEX crosses from negative to positive."""
+    if len(bars) < 2:
+        return None
+    # Look for zero crossings — interpolate between adjacent bars
+    best_strike = None
+    best_dist = float("inf")
+    for i in range(len(bars) - 1):
+        a, b = bars[i], bars[i + 1]
+        if (a["net_gex"] <= 0 < b["net_gex"]) or (a["net_gex"] >= 0 > b["net_gex"]):
+            # Linear interpolation of the zero crossing
+            denom = b["net_gex"] - a["net_gex"]
+            if denom == 0:
+                continue
+            t = -a["net_gex"] / denom
+            cross = a["strike"] + t * (b["strike"] - a["strike"])
+            dist = abs(cross - spot)
+            if dist < best_dist:
+                best_dist = dist
+                best_strike = round(cross, 2)
+    return best_strike
+
+
 def calculate_gex(options_data: dict) -> dict:
     """
     Calculate net GEX per strike from a Schwab options chain response.
@@ -42,14 +65,27 @@ def calculate_gex(options_data: dict) -> dict:
         bars.append({
             "strike": strike,
             "net_gex": round(net, 2),
+            "call_gex": round(d["call_gex"], 2),
+            "put_gex": round(d["put_gex"], 2),
         })
 
     total_net = sum(b["net_gex"] for b in bars)
+
+    # --- Key levels ---
+    # Call wall: strike with highest call GEX (resistance)
+    call_wall = max(bars, key=lambda b: b["call_gex"])["strike"] if bars else None
+    # Put wall: strike with highest put GEX (support)
+    put_wall = max(bars, key=lambda b: b["put_gex"])["strike"] if bars else None
+    # Gamma flip: strike nearest spot where net GEX crosses zero
+    gamma_flip = _find_gamma_flip(bars, spot)
 
     return {
         "symbol": symbol,
         "spot": round(spot, 2),
         "bars": bars,
         "total_net_gex": round(total_net, 2),
+        "call_wall": call_wall,
+        "put_wall": put_wall,
+        "gamma_flip": gamma_flip,
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }

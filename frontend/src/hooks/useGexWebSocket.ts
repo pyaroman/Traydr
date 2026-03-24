@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import type { GexPayload } from "../types/gex";
+import type { GexPayload, CandlePayload, FullPayload } from "../types/gex";
 
 export function useGexWebSocket(url: string) {
   const [data, setData] = useState<GexPayload | null>(null);
+  const [candles, setCandles] = useState<CandlePayload | null>(null);
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -22,7 +23,9 @@ export function useGexWebSocket(url: string) {
       ws.onmessage = (e: MessageEvent) => {
         if (!destroyed) {
           try {
-            setData(JSON.parse(e.data) as GexPayload);
+            const payload = JSON.parse(e.data) as FullPayload;
+            if (payload.gex) setData(payload.gex);
+            if (payload.candles) setCandles(payload.candles);
           } catch {
             // ignore malformed messages
           }
@@ -48,5 +51,5 @@ export function useGexWebSocket(url: string) {
     };
   }, [url]);
 
-  return { data, connected };
+  return { data, candles, connected };
 }
