@@ -12,7 +12,7 @@ const SYMBOLS = ["SPY", "SPX", "QQQ", "NDX"] as const;
 type Tab = "gex" | "price";
 
 export default function App() {
-  const { data, candles, connected } = useGexWebSocket(WS_URL);
+  const { data, connected } = useGexWebSocket(WS_URL);
   const { theme, toggle } = useTheme();
   const isDark = theme === "dark";
   const [activeTab, setActiveTab] = useState<Tab>("gex");
